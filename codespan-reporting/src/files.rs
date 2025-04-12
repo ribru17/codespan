@@ -173,8 +173,16 @@ pub trait Files<'a> {
 
     /// Convenience method for returning line and column number at the given
     /// byte index in the file.
-    fn location(&'a self, id: Self::FileId, byte_index: usize) -> Result<Location, Error> {
-        let line_index = self.line_index(id, byte_index)?;
+    fn location(
+        &'a self,
+        id: Self::FileId,
+        byte_index: usize,
+        line_index: Option<usize>,
+    ) -> Result<Location, Error> {
+        let line_index = match line_index {
+            Some(index) => index,
+            None => self.line_index(id, byte_index)?,
+        };
 
         Ok(Location {
             line_number: self.line_number(id, line_index)?,

@@ -173,7 +173,7 @@ test
                 line_number: 3 + 1,
                 column_number: 2 + 1,
             },
-            files.location(file_id, pos).unwrap()
+            files.location(file_id, pos, None).unwrap()
         );
     }
 

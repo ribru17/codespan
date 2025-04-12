@@ -55,6 +55,10 @@ pub struct Label<FileId> {
     pub file_id: FileId,
     /// The range in bytes we are going to include in the final snippet.
     pub range: Range<usize>,
+    /// The range in 0-indexed, `(row, col)` tuples which will take priority
+    /// over the byte range, if present. This is more efficient than calculating
+    /// positions from byte indices.
+    pub point_range: Option<Range<(usize, usize)>>,
     /// An optional message to provide some additional information for the
     /// underlined code. These should not include line breaks.
     pub message: String,
@@ -72,6 +76,7 @@ impl<FileId> Label<FileId> {
             file_id,
             range: range.into(),
             message: String::new(),
+            point_range: None,
         }
     }
 
@@ -92,6 +97,15 @@ impl<FileId> Label<FileId> {
     /// Add a message to the diagnostic.
     pub fn with_message(mut self, message: impl ToString) -> Label<FileId> {
         self.message = message.to_string();
+        self
+    }
+
+    /// Add a point range to the label.
+    pub fn with_point_range(
+        mut self,
+        point_range: impl Into<Range<(usize, usize)>>,
+    ) -> Label<FileId> {
+        self.point_range = Some(point_range.into());
         self
     }
 }

@@ -87,10 +87,16 @@ where
 
         // Group labels by file
         for label in &self.diagnostic.labels {
-            let start_line_index = files.line_index(label.file_id, label.range.start)?;
+            let (start_line_index, end_line_index) = if let Some(point_range) = &label.point_range {
+                (point_range.start.0, point_range.end.0)
+            } else {
+                (
+                    files.line_index(label.file_id, label.range.start)?,
+                    files.line_index(label.file_id, label.range.end)?,
+                )
+            };
             let start_line_number = files.line_number(label.file_id, start_line_index)?;
             let start_line_range = files.line_range(label.file_id, start_line_index)?;
-            let end_line_index = files.line_index(label.file_id, label.range.end)?;
             let end_line_number = files.line_number(label.file_id, end_line_index)?;
             let end_line_range = files.line_range(label.file_id, end_line_index)?;
 
@@ -112,7 +118,11 @@ where
                     {
                         // this label has a higher style or has the same style but starts earlier
                         labeled_file.start = label.range.start;
-                        labeled_file.location = files.location(label.file_id, label.range.start)?;
+                        labeled_file.location = files.location(
+                            label.file_id,
+                            label.range.start,
+                            Some(start_line_index),
+                        )?;
                         labeled_file.max_label_style = label.style;
                     }
                     labeled_file
@@ -123,7 +133,11 @@ where
                         file_id: label.file_id,
                         start: label.range.start,
                         name: files.name(label.file_id)?.to_string(),
-                        location: files.location(label.file_id, label.range.start)?,
+                        location: files.location(
+                            label.file_id,
+                            label.range.start,
+                            Some(start_line_index),
+                        )?,
                         num_multi_labels: 0,
                         lines: BTreeMap::new(),
                         max_label_style: label.style,
@@ -476,7 +490,11 @@ where
             renderer.render_header(
                 Some(&Locus {
                     name: files.name(label.file_id)?.to_string(),
-                    location: files.location(label.file_id, label.range.start)?,
+                    location: files.location(
+                        label.file_id,
+                        label.range.start,
+                        label.point_range.clone().map(|r| r.start.0),
+                    )?,
                 }),
                 self.diagnostic.severity,
                 self.diagnostic.code.as_deref(),
